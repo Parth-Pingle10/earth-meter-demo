@@ -1,14 +1,24 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Leaf, Target, TrendingDown, Lightbulb } from "lucide-react";
-import { mockUser, mockActivities } from "@/lib/mockData";
+import { mockUser } from "@/lib/mockData";
 
 const Dashboard = () => {
-  const totalEmissions = mockActivities.reduce((sum, activity) => sum + activity.emission, 0);
+  const [activities, setActivities] = useState<any[]>([]);
   const goalProgress = 65;
+
+  useEffect(() => {
+    const stored = localStorage.getItem("ecotrack-activities");
+    if (stored) {
+      setActivities(JSON.parse(stored));
+    }
+  }, []);
+
+  const totalEmissions = activities.reduce((sum, activity) => sum + (activity.emission || 0), 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -89,26 +99,38 @@ const Dashboard = () => {
             <CardTitle>Recent Activities</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {mockActivities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-center justify-between p-4 bg-muted rounded-lg hover:bg-muted/80 transition-smooth"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{activity.icon}</span>
-                    <div>
-                      <p className="font-medium">{activity.type}</p>
-                      <p className="text-sm text-muted-foreground">{activity.date}</p>
+            {activities.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                No activities logged yet. Start tracking your carbon footprint!
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {activities.slice(-5).reverse().map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="flex items-center justify-between p-4 bg-muted rounded-lg hover:bg-muted/80 transition-smooth"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">
+                        {activity.type === "Car Travel" && "🚗"}
+                        {activity.type === "Electricity Usage" && "⚡"}
+                        {activity.type === "Food Consumption" && "🍔"}
+                        {activity.type === "Flight Travel" && "✈️"}
+                        {activity.type === "Bike/Walk" && "🚲"}
+                      </span>
+                      <div>
+                        <p className="font-medium">{activity.type}</p>
+                        <p className="text-sm text-muted-foreground">{activity.date}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-primary">{activity.emission.toFixed(2)} kg</p>
+                      <p className="text-xs text-muted-foreground">CO₂e</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-primary">{activity.emission.toFixed(2)} kg</p>
-                    <p className="text-xs text-muted-foreground">CO₂e</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>

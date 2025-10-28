@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { activityTypes, emissionFactors } from "@/lib/mockData";
-import { Calculator, Sparkles } from "lucide-react";
+import { Calculator, Sparkles, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 const Activity = () => {
@@ -14,13 +14,20 @@ const Activity = () => {
   const [distance, setDistance] = useState("");
   const [mileage, setMileage] = useState("");
   const [fuelType, setFuelType] = useState("petrol");
+  const [electricity, setElectricity] = useState("");
+  const [dietType, setDietType] = useState("mixed");
+  const [flightDistance, setFlightDistance] = useState("");
   const [calculatedEmission, setCalculatedEmission] = useState<number | null>(null);
+  const [currentActivityType, setCurrentActivityType] = useState("");
 
   const calculateEmission = () => {
     if (!selectedActivity) {
       toast.error("Please select an activity type");
       return;
     }
+
+    let emission = 0;
+    let activityType = "";
 
     if (selectedActivity === "car") {
       const dist = parseFloat(distance);
@@ -32,12 +39,74 @@ const Activity = () => {
       }
 
       const factor = fuelType === "petrol" ? emissionFactors.petrol : emissionFactors.diesel;
-      const emission = (dist / mil) * factor;
-      setCalculatedEmission(emission);
-      toast.success("Emission calculated successfully! 🌿");
-    } else {
-      toast.info("Calculation for this activity coming soon!");
+      emission = (dist / mil) * factor;
+      activityType = "Car Travel";
+    } else if (selectedActivity === "electricity") {
+      const kWh = parseFloat(electricity);
+      
+      if (!kWh) {
+        toast.error("Please enter electricity consumed");
+        return;
+      }
+
+      emission = kWh * emissionFactors.electricity;
+      activityType = "Electricity Usage";
+    } else if (selectedActivity === "food") {
+      const dietEmissions = {
+        vegetarian: 3.8,
+        mixed: 5.6,
+        nonVegetarian: 7.2
+      };
+      emission = dietEmissions[dietType as keyof typeof dietEmissions];
+      activityType = "Food Consumption";
+    } else if (selectedActivity === "flight") {
+      const dist = parseFloat(flightDistance);
+      
+      if (!dist) {
+        toast.error("Please enter flight distance");
+        return;
+      }
+
+      emission = dist * emissionFactors.flight;
+      activityType = "Flight Travel";
+    } else if (selectedActivity === "bike") {
+      emission = 0;
+      activityType = "Bike/Walk";
+      toast.success("Great choice! Zero emissions! 🌿");
     }
+
+    setCalculatedEmission(emission);
+    setCurrentActivityType(activityType);
+    toast.success("Emission calculated successfully! 🌿");
+  };
+
+  const addToDashboard = () => {
+    if (calculatedEmission === null) return;
+
+    const activities = JSON.parse(localStorage.getItem("ecotrack-activities") || "[]");
+    const newActivity = {
+      id: Date.now(),
+      type: currentActivityType,
+      emission: calculatedEmission,
+      date: new Date().toISOString().split('T')[0],
+      ...(selectedActivity === "car" && { distance, mileage, fuel: fuelType }),
+      ...(selectedActivity === "electricity" && { units: electricity }),
+      ...(selectedActivity === "food" && { dietType }),
+      ...(selectedActivity === "flight" && { distance: flightDistance })
+    };
+
+    activities.push(newActivity);
+    localStorage.setItem("ecotrack-activities", JSON.stringify(activities));
+    
+    toast.success("Activity added to dashboard! 🎉");
+    
+    // Reset form
+    setSelectedActivity("");
+    setDistance("");
+    setMileage("");
+    setElectricity("");
+    setFlightDistance("");
+    setCalculatedEmission(null);
   };
 
   return (
@@ -113,6 +182,62 @@ const Activity = () => {
               </div>
             )}
 
+            {selectedActivity === "electricity" && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="space-y-2">
+                  <Label htmlFor="electricity">Electricity Consumed (kWh)</Label>
+                  <Input
+                    id="electricity"
+                    type="number"
+                    placeholder="e.g., 50"
+                    value={electricity}
+                    onChange={(e) => setElectricity(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {selectedActivity === "food" && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="space-y-2">
+                  <Label>Diet Type</Label>
+                  <Select value={dietType} onValueChange={setDietType}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="vegetarian">Vegetarian (3.8 kg CO₂/day)</SelectItem>
+                      <SelectItem value="mixed">Mixed Diet (5.6 kg CO₂/day)</SelectItem>
+                      <SelectItem value="nonVegetarian">Non-Vegetarian (7.2 kg CO₂/day)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {selectedActivity === "flight" && (
+              <div className="space-y-4 animate-fade-in">
+                <div className="space-y-2">
+                  <Label htmlFor="flightDistance">Flight Distance (km)</Label>
+                  <Input
+                    id="flightDistance"
+                    type="number"
+                    placeholder="e.g., 1500"
+                    value={flightDistance}
+                    onChange={(e) => setFlightDistance(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            {selectedActivity === "bike" && (
+              <div className="p-4 bg-success/10 rounded-lg text-center animate-fade-in">
+                <p className="text-success font-medium">
+                  🎉 Excellent choice! Walking and cycling produce zero emissions.
+                </p>
+              </div>
+            )}
+
             <Button 
               onClick={calculateEmission} 
               className="w-full eco-gradient"
@@ -133,7 +258,15 @@ const Activity = () => {
                 <div className="text-5xl font-bold text-white mb-2">
                   {calculatedEmission.toFixed(2)}
                 </div>
-                <p className="text-white/90">kg CO₂e</p>
+                <p className="text-white/90 mb-4">kg CO₂e</p>
+                <Button 
+                  onClick={addToDashboard}
+                  className="bg-white text-primary hover:bg-white/90"
+                  size="lg"
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  Add to Dashboard
+                </Button>
               </div>
             </CardContent>
           </Card>
