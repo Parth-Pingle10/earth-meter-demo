@@ -1,0 +1,119 @@
+import { Link } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import StatCard from "@/components/StatCard";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Leaf, Target, TrendingDown, Lightbulb } from "lucide-react";
+import { mockUser, mockActivities } from "@/lib/mockData";
+
+const Dashboard = () => {
+  const totalEmissions = mockActivities.reduce((sum, activity) => sum + activity.emission, 0);
+  const goalProgress = 65;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <main className="container py-8 animate-fade-in">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">
+            Welcome back, {mockUser.name.split(' ')[0]} 🌿
+          </h1>
+          <p className="text-muted-foreground">Here's your carbon footprint overview</p>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3 mb-8">
+          <StatCard
+            title="Total Emissions"
+            value={`${totalEmissions.toFixed(1)} kg`}
+            icon={<Leaf className="h-5 w-5" />}
+            subtitle="CO₂e this month"
+          />
+          <StatCard
+            title="Active Goal Progress"
+            value={`${goalProgress}%`}
+            icon={<Target className="h-5 w-5" />}
+            subtitle="On track to meet goal"
+          />
+          <StatCard
+            title="Reduction Potential"
+            value="8.5 kg"
+            icon={<TrendingDown className="h-5 w-5" />}
+            subtitle="Based on recommendations"
+          />
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 mb-8">
+          <Card className="shadow-eco transition-smooth hover:scale-[1.02]">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5 text-primary" />
+                Quick Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Link to="/activity">
+                <Button className="w-full eco-gradient justify-start" size="lg">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Log New Activity
+                </Button>
+              </Link>
+              <Link to="/recommendations">
+                <Button variant="outline" className="w-full justify-start" size="lg">
+                  <Lightbulb className="h-5 w-5 mr-2" />
+                  View Recommendations
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-eco transition-smooth hover:scale-[1.02]">
+            <CardHeader>
+              <CardTitle>Latest Recommendation</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
+                <span className="text-2xl">🚶</span>
+                <div>
+                  <p className="font-medium">Try walking for short distances</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Potential saving: 2.1 kg CO₂/week
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="shadow-eco">
+          <CardHeader>
+            <CardTitle>Recent Activities</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {mockActivities.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-center justify-between p-4 bg-muted rounded-lg hover:bg-muted/80 transition-smooth"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{activity.icon}</span>
+                    <div>
+                      <p className="font-medium">{activity.type}</p>
+                      <p className="text-sm text-muted-foreground">{activity.date}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-primary">{activity.emission.toFixed(2)} kg</p>
+                    <p className="text-xs text-muted-foreground">CO₂e</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;
