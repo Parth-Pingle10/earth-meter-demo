@@ -28,7 +28,7 @@ const Navbar = () => {
       <div className="container flex h-16 items-center justify-between">
         <Link to="/dashboard" className="flex items-center gap-2 font-bold text-xl">
           <Leaf className="h-6 w-6 text-primary" />
-          <span className="eco-gradient bg-clip-text text-transparent">EcoTrack</span>
+          <span className="text-foreground">EcoTrack</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-1">
